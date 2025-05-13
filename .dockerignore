@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+.git/
+.gitignore
+.idea
+model/final_model.h5
+model/final_model.keras
