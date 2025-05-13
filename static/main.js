@@ -7,10 +7,9 @@ const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
 
 function initEventListeners() {
-    // Клик по зоне загрузки
+
     dropZone.addEventListener('click', () => fileInput.click());
 
-    // Выбор файла
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length) processImage(e.target.files[0]);
     });
@@ -86,7 +85,7 @@ async function processImage(file) {
     }
 }
 
-// Отображение результатов
+
 function showResult(data, file) {
     if (data.error) {
         showError(data.error);
@@ -123,7 +122,6 @@ function showError(message) {
     `;
 }
 
-// Загрузка по URL
 async function loadFromUrl() {
     const url = urlInput.value.trim();
 

@@ -13,20 +13,18 @@ class DogBreedDetector:
     def preprocess_image(self, img, target_size=(350, 350)):
         """Подготовка изображения для Keras-модели"""
         img = cv2.resize(img, target_size)
-        img = img / 255.0  # Нормализация
+        img = img / 255.0  #
         return np.expand_dims(img, axis=0)
 
     def predict_breed(self, img_path):
         img = cv2.imread(img_path)
         if img is None:
             return {"error": "Не удалось загрузить изображение"}
-
         try:
             img_processed = self.preprocess_image(img)
             preds = self.breed_model.predict(img_processed)[0]
             top_class_idx = int(np.argmax(preds))
             confidence = float(preds[top_class_idx] * 100)
-
             return {
                 "breed": self.breed_map.get(str(top_class_idx), "Unknown"),
                 "confidence": confidence
