@@ -2,14 +2,14 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 import os
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from config import Config
 from model.DogBreedDetector import DogBreedDetector
 import logging
+import gdown
+import tempfile
 import requests
 from io import BytesIO
 from PIL import Image
-import tempfile
-import gdown
-
 
 def download_model():
     model_path = "model/final_model.keras"
@@ -22,31 +22,42 @@ def download_model():
     else:
         print("✅ Модель уже загружена.")
 
-
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join(tempfile.gettempdir(), 'uploads')
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+app.config.from_object(Config)  # Включение CORS
+
+# Используем временную папку на Render
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True) # Создаем папку, если она не существует
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['ALLOWED_EXTENSIONS'] = {'jpg', 'jpeg', 'png'}  # Расширения для проверки
 CORS(app)
 logging.basicConfig(level=logging.DEBUG)
 
-download_model()
-detector = DogBreedDetector()
+try:
+    download_model()
+    detector = DogBreedDetector()
+except Exception as e:
+    raise RuntimeError(f"Model initialization failed: {str(e)}")
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ['jpg', 'jpeg', 'png']
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def download_image_from_url(url):
     try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()  # Проверка успешности загрузки
-        img = Image.open(BytesIO(response.content))
-        return img
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; DogBreedClassifier/1.0; +https://your-site.com)"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        return Image.open(BytesIO(response.content))
     except Exception as e:
         raise ValueError(f"Ошибка загрузки изображения: {str(e)}")
 
+
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('index.html', js_url=url_for('static', filename='main.js'), css_url=url_for('static', filename='styles.css'))
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -54,29 +65,35 @@ def uploaded_file(filename):
 
 @app.route('/detect', methods=['POST'])
 def detect():
+    print("📥 detect вызван")
+
     try:
-        # Обработка URL изображения
+        # проверка типа
+        print(f"Content-Type: {request.content_type}")
         if request.content_type == 'application/json':
             data = request.get_json()
             if 'image_url' not in data:
                 return jsonify({'error': 'No URL provided'}), 400
+
             img = download_image_from_url(data['image_url'])
             filename = secure_filename(os.path.basename(data['image_url'])[:255]) or 'uploaded_image.jpg'
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             img.save(filepath)
 
-        # Обработка изображения из формы
+        # Обработка файла из формы
         elif 'file' in request.files:
             file = request.files['file']
             if file.filename == '':
                 return jsonify({'error': 'No selected file'}), 400
+
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
+
         else:
             return jsonify({'error': 'No image provided'}), 400
 
-        # Общая обработка изображения
+        # Общая обработка
         result = detector.predict_breed(filepath)
         result['image_url'] = url_for('uploaded_file', filename=filename, _external=True)
 
@@ -91,13 +108,20 @@ def proxy_image():
     try:
         data = request.get_json()
         image_url = data['image_url']
-        # Скачивание изображения по URL
-        img = download_image_from_url(image_url)
-        filename = secure_filename(os.path.basename(image_url)) or 'image.jpg'
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        img.save(filepath)
-        return jsonify({'image_url': url_for('uploaded_file', filename=filename, _external=True)})
+        response = requests.get(image_url)
+        response.raise_for_status()  # Check if the request was successful
+        return (response.content, 200, {'Content-Type': response.headers['Content-Type']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+@app.route('/clear_uploads', methods=['POST'])
+def clear_uploads():
+    try:
+        for filename in os.listdir(app.config['UPLOAD_FOLDER']):
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

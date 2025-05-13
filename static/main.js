@@ -104,7 +104,16 @@ function showResult(data, file) {
     `;
     html += '</div>';
 
-    if (file) {
+    // Используйте image_url, если он есть
+    if (data.image_url) {
+        html += `
+            <div class="position-relative">
+                <img src="${data.image_url}"
+                     class="img-fluid rounded mt-3"
+                     style="max-height: 300px;">
+            </div>
+        `;
+    } else if (file) {
         html += `
             <div class="position-relative">
                 <img src="${URL.createObjectURL(file)}"
@@ -116,6 +125,7 @@ function showResult(data, file) {
 
     resultDiv.innerHTML = html;
 }
+
 
 function showError(message) {
     resultDiv.innerHTML = `
