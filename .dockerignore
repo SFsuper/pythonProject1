@@ -7,5 +7,5 @@ __pycache__/
 .git/
 .gitignore
 .idea
-model/final_model.h5
+uploads/*
 model/final_model.keras

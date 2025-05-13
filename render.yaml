@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: flask-dogbreed-app
-    env: docker
-    plan: free
-    autoDeploy: true
+    name: dog-breed-detector
+    runtime: docker
+    dockerfilePath: Dockerfile
+    env: python
