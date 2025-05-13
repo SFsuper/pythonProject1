@@ -7,7 +7,6 @@ const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
 
 function initEventListeners() {
-
     dropZone.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', (e) => {
@@ -24,6 +23,9 @@ function initEventListeners() {
     });
 
     dropZone.addEventListener('drop', handleDrop);
+
+    // Load from URL
+    urlInput.addEventListener('change', () => loadFromUrl());
 }
 
 function highlightDropZone(e) {
@@ -61,7 +63,8 @@ async function processImage(file) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/detect', {
+        const API_URL = window.location.origin;
+        const response = await fetch(`${API_URL}/detect`, {
             method: 'POST',
             body: formData,
         });
@@ -69,22 +72,22 @@ async function processImage(file) {
         updateProgress(100);
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error + "11111" || 'Ошибка сервера');
+            const errorText = await response.text();
+            throw new Error(errorText || 'Ошибка сервера');
         }
 
         const data = await response.json();
         showResult(data, file);
 
     } catch (error) {
-        showError(error.message + "1111");
+        console.error('Error:', error);
+        showError(error.message);
     } finally {
         setTimeout(() => {
             progressContainer.classList.add('d-none');
         }, 1000);
     }
 }
-
 
 function showResult(data, file) {
     if (data.error) {
@@ -124,7 +127,6 @@ function showError(message) {
 
 async function loadFromUrl() {
     const url = urlInput.value.trim();
-
     if (!url) {
         showError('Введите URL изображения');
         return;
@@ -134,27 +136,36 @@ async function loadFromUrl() {
         progressContainer.classList.remove('d-none');
         updateProgress(0);
 
-        const response = await fetch(url);
-        updateProgress(50);
+        // Отправляем URL на сервер для обработки
+        const API_URL = window.location.origin;
+        const response = await fetch(`${API_URL}/detect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image_url: url }),
+        });
 
-        if (!response.ok) throw new Error('Ошибка загрузки изображения');
+        updateProgress(100);
 
-        const blob = await response.blob();
-        updateProgress(80);
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Ошибка сервера');
+        }
 
-        await processImage(blob);
+        const data = await response.json();
+        showResult(data);
 
     } catch (error) {
-        showError(error.message + "222");
+        console.error('Error:', error);
+        showError(error.message);
     } finally {
         setTimeout(() => {
             progressContainer.classList.add('d-none');
-        }, 1000)
+        }, 1000);
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
-
-    window.loadFromUrl = loadFromUrl;
 });
