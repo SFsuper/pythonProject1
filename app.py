@@ -22,6 +22,8 @@ def download_model():
 app = Flask(__name__)
 app.config.from_object(Config)
 logging.basicConfig(level=logging.DEBUG)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 
 try:
     download_model()
