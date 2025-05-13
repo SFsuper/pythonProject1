@@ -70,14 +70,14 @@ async function processImage(file) {
 
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.error || 'Ошибка сервера');
+            throw new Error(err.error + "11111" || 'Ошибка сервера');
         }
 
         const data = await response.json();
         showResult(data, file);
 
     } catch (error) {
-        showError(error.message);
+        showError(error.message + "1111");
     } finally {
         setTimeout(() => {
             progressContainer.classList.add('d-none');
@@ -145,7 +145,7 @@ async function loadFromUrl() {
         await processImage(blob);
 
     } catch (error) {
-        showError(error.message);
+        showError(error.message + "222");
     } finally {
         setTimeout(() => {
             progressContainer.classList.add('d-none');

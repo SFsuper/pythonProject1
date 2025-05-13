@@ -21,10 +21,6 @@ def download_model():
 
 app = Flask(__name__)
 app.config.from_object(Config)
-
-# Создаем папки, если они не существуют
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
 logging.basicConfig(level=logging.DEBUG)
 
 try:
@@ -55,7 +51,6 @@ def uploaded_file(filename):
 @app.route('/detect', methods=['GET', 'POST'])
 def detect():
     if request.method == 'GET':
-        # Пример GET запроса - можно вернуть форму или инструкции
         return jsonify({
             'message': 'Send POST request with image file to detect breed',
             'allowed_extensions': app.config['ALLOWED_EXTENSIONS']
@@ -97,7 +92,6 @@ def detect():
 
 @app.route('/clear_uploads', methods=['POST'])
 def clear_uploads():
-    """Очистка папки с загруженными файлами"""
     try:
         for filename in os.listdir(app.config['UPLOAD_FOLDER']):
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
