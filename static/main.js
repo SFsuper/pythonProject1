@@ -63,8 +63,7 @@ async function processImage(file) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const API_URL = window.location.origin;
-        const response = await fetch(`${API_URL}/detect`, {
+        const response = await fetch(/detect`, {
             method: 'POST',
             body: formData,
         });
@@ -147,8 +146,7 @@ async function loadFromUrl() {
         updateProgress(0);
 
         // Отправляем URL на сервер для обработки
-        const API_URL = window.location.origin;
-        const response = await fetch(`${API_URL}/detect`, {
+        const response = await fetch(/detect`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
