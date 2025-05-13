@@ -6,7 +6,6 @@ from config import Config
 from model.DogBreedDetector import DogBreedDetector
 import logging
 import gdown
-import tempfile
 import requests
 from io import BytesIO
 from PIL import Image
@@ -23,13 +22,11 @@ def download_model():
         print("✅ Модель уже загружена.")
 
 app = Flask(__name__)
-app.config.from_object(Config)  # Включение CORS
-
-# Используем временную папку на Render
+app.config.from_object(Config)
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True) # Создаем папку, если она не существует
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['ALLOWED_EXTENSIONS'] = {'jpg', 'jpeg', 'png'}  # Расширения для проверки
+app.config['ALLOWED_EXTENSIONS'] = {'jpg', 'jpeg', 'png'}
 CORS(app)
 logging.basicConfig(level=logging.DEBUG)
 
